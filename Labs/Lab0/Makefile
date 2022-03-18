@@ -1,3 +1,4 @@
+# Joseph Peters
 # To compile both programs, list both executable names here.
 all: paint palindrome
 
@@ -10,7 +11,11 @@ paint.o: paint.c
 	gcc paint.c -c -g -lm -Wall
 
 # Add the statements here to compile "palindrome.c" and create "palindrome". 
+palindrome: palindrome.o
+	gcc palindrome.o -o paint -g -lm -Wall
 
+palindrome.0: palindrome.c
+	gcc palindrome.c -c -g -lm -Wall
 
 
 
