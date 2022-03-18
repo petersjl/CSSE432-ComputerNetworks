@@ -12,7 +12,7 @@ paint.o: paint.c
 
 # Add the statements here to compile "palindrome.c" and create "palindrome". 
 palindrome: palindrome.o
-	gcc palindrome.o -o paint -g -lm -Wall
+	gcc palindrome.o -o palindrome -g -lm -Wall
 
 palindrome.0: palindrome.c
 	gcc palindrome.c -c -g -lm -Wall
