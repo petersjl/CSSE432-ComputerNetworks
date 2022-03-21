@@ -1,5 +1,5 @@
 /* File: palindrome.c 
-   Author: 
+  Author: 
    
 */
 #include <stdio.h>
@@ -8,7 +8,7 @@
 #include <ctype.h>
 
 /*Optional functions, uncomment the next two lines
- * if you want to create these functions after main: */
+  * if you want to create these functions after main: */
 //bool readLine(char** line, size_t* size, size_t* length);
 
 /* 
@@ -24,8 +24,34 @@
   * things like strings...
 */
 
-//bool isPalindrome(const char* line, size_t len);
+bool isPalindrome(const char* line, size_t len){
+  int i = 0;
+  int j = (int) len;
+
+  while (true) {
+    while (!isalpha(line[i]) && i < len) i++;
+    while (!isalpha(line[j]) && j >= 0) --j;
+    if(i >= j) return true;
+    if(tolower(line[i]) != tolower(line[j])) return false;
+    ++i;
+    j--;
+  }
+}
 
 int main(int argc, char *argv[]){
-    //your code here
+  size_t size = 64;
+  char* string = (char*) malloc(64*sizeof(char));
+  while(true){
+    printf("word> ");
+    size_t char_count = getline(&string, &size, stdin);
+    string[(int) char_count - 1] = '\0';
+    char_count -= 1;
+    if(string[0] == '.') break;
+    if(isPalindrome(string, char_count)){
+      printf("\"%s\" is a palindrome\n", string);
+    }else{
+      printf("\"%s\" is not a palindrome\n", string);
+    }
+  }
+  free(string);
 }
