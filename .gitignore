@@ -1,5 +1,4 @@
 main
-*
-!*.*
+node_modules
 *.xls
 *.o
