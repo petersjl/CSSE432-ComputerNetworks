@@ -48,8 +48,8 @@ void getUpperString(char* s){
 }
 
 int main(int argc, char** argv){
-	if(argc != 2) {
-		printf("Usage: ./server <port>");
+	if(argc < 2) {
+		printf("Usage: ./server <port>\nor\n\t./server <port> <ip_version_number (4 or 6)>\n");
 		exit(1);
 	}
 	char* PORT = argv[1];
@@ -66,6 +66,18 @@ int main(int argc, char** argv){
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE; // use my IP
+
+    if(argc == 3){
+        if(strcmp(argv[2], "4") == 0){
+            hints.ai_family = AF_INET;
+        }
+        else if(strcmp(argv[2], "6") == 0){
+            hints.ai_family = AF_INET6;
+        }
+        else {
+            printf("Invalid ip version. Defaulting to any\n");
+        }
+    }
 
     if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
@@ -91,9 +103,26 @@ int main(int argc, char** argv){
             perror("server: bind");
             continue;
         }
-
         break;
     }
+
+    // get the pointer to the address itself,
+    // different fields in IPv4 and IPv6:
+    void *addr;
+    if (p->ai_family == AF_INET) { // IPv4
+        struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
+        addr = &(ipv4->sin_addr);
+    } else { // IPv6
+        struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_addr;
+        addr = &(ipv6->sin6_addr);
+    }
+    char ipstr[INET6_ADDRSTRLEN];
+    void* rt;
+    if((rt = inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr)) == NULL){
+        perror("ntop:");
+    };
+
+	printf("%s is running on port %s\n", ipstr, PORT);
 
     freeaddrinfo(servinfo); // all done with this structure
 
@@ -115,15 +144,6 @@ int main(int argc, char** argv){
         exit(1);
     }
 
-	char hostname[32];
-	int her = gethostname(hostname, 32);
-	if(her == -1)
-		perror("Hostname");
-	struct hostent* hostip = gethostbyname(hostname); 
-    char ip4[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(hostip->h_addr_list[0]), ip4, INET_ADDRSTRLEN);
-
-	printf("%s is running on port %s\n", ip4, PORT);
     printf("server: waiting for connections...\n");
 
     while(1) {  // main accept() loop
@@ -141,15 +161,28 @@ int main(int argc, char** argv){
 
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
+            int messageCount = 0;
 			int recieved = -1;
 			char buf[1024];
 			while((recieved = recv(new_fd, buf, MAXDATASIZE - 1, 0)) != 0){
-				buf[recieved] = '\0';
-                printf("%s sent: %s", s, buf);
-				getUpperString(buf);
-				if (send(new_fd, buf, recieved, 0) == -1)
-            		perror("send");
-                printf("sending to %s: %s", s, buf);
+                messageCount++;
+                int subCount = 0;
+                char countString[10];
+                sprintf(countString, "%d", messageCount);
+                if (send(new_fd, countString, 10, 0) == -1)
+                        perror("send");
+                while (1){
+                    recieved = recv(new_fd, buf, MAXDATASIZE - 1, 0);
+                    buf[recieved] = '\0';
+                    if(recieved == 1 && buf[0] == '.') break;
+                    printf("%s sent: %s", s, buf);
+                    if(buf[recieved - 1] != '\n') printf("\n");
+                    getUpperString(buf);
+                    if (send(new_fd, buf, recieved, 0) == -1)
+                        perror("send");
+                    subCount++;
+                    printf("sending message %d.%d to %s: %s\n", messageCount, subCount, s, buf);
+                }
 			}
             printf("server: %s closed connection\n", s);
             close(new_fd);

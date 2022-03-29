@@ -60,7 +60,6 @@ int main(int argc, char** argv)
             perror("client: connect");
             continue;
         }
-    printf("here\n");
 
         break;
     }
@@ -77,6 +76,9 @@ int main(int argc, char** argv)
 
 	char input[MAXDATASIZE];
 	char* result;
+
+    printf("\nReady for user input. Type \";;;\" to disconnect and exit.\n\n");
+
 	while(1){
 		memset(input, '\0', MAXDATASIZE);
 		printf("You> ");
@@ -94,7 +96,14 @@ int main(int argc, char** argv)
 		// 	exit(1);
 		// }
         // buf[numbytes] = '\0';
-		printf("Srv> ");
+        if (send(sockfd, " ", 1, 0) == -1)
+            perror("send");
+        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        }
+        buf[numbytes] = '\0';
+		printf("Srv> %s ", buf);
         while(1){
             if (send(sockfd, input, strlen(input), 0) == -1)
                 perror("send");
@@ -108,6 +117,8 @@ int main(int argc, char** argv)
             if(input[strlen(input) - 1] == '\n') break;
             fgets(input, MAXDATASIZE, stdin);
         }
+        if (send(sockfd, ".", 1, 0) == -1)
+            perror("send");
 	}
 
     close(sockfd);
