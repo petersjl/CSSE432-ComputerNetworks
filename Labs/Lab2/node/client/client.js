@@ -84,14 +84,13 @@ function askQuestion(){
 }
 
 function list(path){
-	console.log(path || "/");
 	const req = http.request(listOptions, res => {  
 		res.on('data', d => {
 			let data = JSON.parse(d);
 			if(data.error){
 				console.log("Error: path not found");
 			}else{
-				console.log(`${"/" + path}> ${data.message}`);
+				console.log(`${"/" + (path || "")}> ${data.message}`);
 			}
 			askQuestion();
 		})
