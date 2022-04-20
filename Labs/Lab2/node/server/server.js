@@ -2,7 +2,8 @@ const express = require('express');
 const readline = require('readline');
 var bodyParser = require("body-parser");
 const os = require('os');
-const fs = require('fs');
+const fs = require('fs-extra');
+const multer = require('multer');
 
 const server = express()
 const rl = readline.createInterface({
@@ -11,7 +12,7 @@ const rl = readline.createInterface({
 });
 
 const hostname = os.hostname();
-const DEFAULT_DIRECTORY = __dirname + "/store";
+const DEFAULT_DIRECTORY = __dirname + "/store/";
 
 let port;
 if (process.argv[2] == null) {
@@ -31,7 +32,6 @@ let dict = {};
 server.use('/', bodyParser.json());
 server.use('/list', bodyParser.json());
 server.use('/want', bodyParser.json());
-server.use('/take', bodyParser.json());
 
 server.post('/', (req, res) => {
 	console.log(`${req.hostname} says: ${req.body.message}`);
@@ -56,6 +56,24 @@ server.post("/list", (req, res) => {
 		files.forEach(file => {fileNames += file + "\t"});
 		res.send(JSON.stringify({error: false, message: fileNames}));
 		}		
+	})
+});
+
+server.post("/take", (req, res) => {
+	let upload = multer({dest: DEFAULT_DIRECTORY}).single('file');
+
+	upload(req, res, (err) => {
+		if(err) {
+			return res.send(JSON.stringify({error: true, message: err.message}));
+		}
+		console.log(`Saving file to path: /${req.body.path}`);
+		fs.copy(req.file.path, DEFAULT_DIRECTORY + req.body.path, err => {
+			if(err){
+				return res.send(JSON.stringify({error: true, message: err.message}));
+			}
+			fs.unlinkSync(req.file.path);
+			res.send(JSON.stringify({error: false, message: "File received successfully"}));
+		})
 	})
 })
 
