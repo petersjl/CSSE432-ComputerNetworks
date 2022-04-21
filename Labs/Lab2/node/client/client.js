@@ -57,6 +57,11 @@ function askQuestion(){
 		let parts = p.split(" ");
 		let command = parts[0].toLowerCase();
 		switch (command){
+			case "exit":
+			case "q":
+			case "quit": {
+				process.exit();
+			}break;
 			case "ls": 
 			case "list": {
 				list(parts[1]);
@@ -76,7 +81,7 @@ function askQuestion(){
 				take(parts[1], parts[2]);
 			}break;
 			default : {
-				console.log("Available commands:\nls (path)\niWant <file path on server> (destination on client)\nuTake <file path on client> (destination on server)\n");
+				console.log("Available commands:\nls (path)\niWant <file path on server> (destination on client)\nuTake <file path on client> (destination on server)\nexit");
 				askQuestion();
 			}
 		}
@@ -113,7 +118,6 @@ function take(from, to){
 		let name = pathmod.basename(path);
 		const form = new FormData();
 		form.append('path', to || name);
-		form.append('title', 'download');
 		form.append('file', file);
 		takeOptions.headers = {...form.getHeaders(), };
 
