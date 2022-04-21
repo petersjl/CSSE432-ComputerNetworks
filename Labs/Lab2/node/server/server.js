@@ -4,6 +4,8 @@ var bodyParser = require("body-parser");
 const os = require('os');
 const fs = require('fs-extra');
 const multer = require('multer');
+const FormData = require('form-data');
+const pathmod = require('path');
 
 const server = express()
 const rl = readline.createInterface({
@@ -75,7 +77,27 @@ server.post("/take", (req, res) => {
 			res.send(JSON.stringify({error: false, message: "File received successfully"}));
 		})
 	})
-})
+});
+
+server.post("/want", (req, res) => {
+	console.log(`Client asked for: ${req.body.path}`);
+	let path = DEFAULT_DIRECTORY + req.body.path;
+	const form = new FormData();
+	if(!fs.existsSync(path)){
+		form.append('error', 'true');
+		form.append('message', 'requested file does not exist');
+		res.writeHead(404, form.getHeaders());
+		form.pipe(res);
+	}else{
+		let file = fs.createReadStream(path, {encoding: null});
+		let name = pathmod.basename(path);
+		console.log(`Found file name: ${name}`);
+		form.append('name', name);
+		form.append('file', file);
+		res.writeHead(200, form.getHeaders());
+		form.pipe(res);
+	}
+});
 
 console.log(`Starting server on ${hostname} on port ${port}`);
 server.listen(port);

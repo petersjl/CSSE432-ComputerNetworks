@@ -1,8 +1,9 @@
 const http = require('http');
 const readline = require('readline');
-const fs = require('fs');
+const fs = require('fs-extra');
 const FormData = require('form-data');
 const pathmod = require('path');
+const formidable = require('formidable');
 
 const rl = readline.createInterface({
 	input: process.stdin,
@@ -137,7 +138,40 @@ function take(from, to){
 }
 
 function want(from, to){
+	if(from == null){
+		console.log('\tError: need a filepath to request');
+	}
+	const req = http.request(wantOptions, res => {  
+		let form = new formidable.IncomingForm();
+		form.parse(res, (err, fields, files) => {
+			if (err) {
+				console.error(err);
+			}else if(fields.error == 'true'){
+				console.log(`\tError: ${fields.message}`);
+				return askQuestion();
+			}else{
+				if(files.file == null) {
+					console.log(`\tError: no file received`);
+					return askQuestion();
+				}
+				fs.copy(files.file.filepath, DEFAULT_DIRECTORY + (to || fields.name), err => {
+					if(err){
+						console.log('\tError: problem copying file to destination');
+					}else{
+						fs.unlinkSync(files.file.filepath);
+					}
+					askQuestion();
+				})
+			}
+		})
+	});
+		
+	req.on('error', error => {
+		console.error(error)
+	})
 
+	req.write(JSON.stringify({path: from}))
+	req.end();
 }
 
 askQuestion();
